@@ -1,0 +1,31 @@
+<svg width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M40 75C45.5228 75 50 59.33 50 40C50 20.67 45.5228 5 40 5C34.4772 5 30 20.67 30 40C30 59.33 34.4772 75 40 75Z" fill="url(#paint0_linear_4_911)" stroke-width="1.8" stroke="#A97E2D"/>
+<path d="M35 15H45Z" fill="black"/>
+<path d="M35 15H45" stroke-width="1.2" stroke="#B8892F"/>
+<path d="M35 21H45Z" fill="black"/>
+<path d="M35 21H45" stroke-width="1.2" stroke="#B8892F"/>
+<path d="M35 27H45Z" fill="black"/>
+<path d="M35 27H45" stroke-width="1.2" stroke="#B8892F"/>
+<path d="M35 33H45Z" fill="black"/>
+<path d="M35 33H45" stroke-width="1.2" stroke="#B8892F"/>
+<path d="M35 39H45Z" fill="black"/>
+<path d="M35 39H45" stroke-width="1.2" stroke="#B8892F"/>
+<path d="M35 45H45Z" fill="black"/>
+<path d="M35 45H45" stroke-width="1.2" stroke="#B8892F"/>
+<path d="M35 51H45Z" fill="black"/>
+<path d="M35 51H45" stroke-width="1.2" stroke="#B8892F"/>
+<path d="M35 57H45Z" fill="black"/>
+<path d="M35 57H45" stroke-width="1.2" stroke="#B8892F"/>
+<path d="M35 63H45Z" fill="black"/>
+<path d="M35 63H45" stroke-width="1.2" stroke="#B8892F"/>
+<path d="M35 69H45Z" fill="black"/>
+<path d="M35 69H45" stroke-width="1.2" stroke="#B8892F"/>
+<path d="M35 17C32.3333 31.6667 32.3333 47 35 63" stroke-width="2.2" stroke-linecap="round" stroke="#FFF1AC"/>
+<defs>
+<linearGradient id="paint0_linear_4_911" x1="30" y1="5" x2="50" y2="5" gradientUnits="userSpaceOnUse">
+<stop stop-color="#FFEFA2"/>
+<stop offset="0.5" stop-color="#FFD54F"/>
+<stop offset="1" stop-color="#C18D2C"/>
+</linearGradient>
+</defs>
+</svg>
