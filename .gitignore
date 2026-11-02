@@ -1,4 +1,25 @@
-node_modules
-dist
+# Frontend dependencies and build files
+node_modules/
+dist/
 *.local
 *.tsbuildinfo
+
+# Environment secrets
+.env
+.env.*
+!.env.example
+
+# Backend configuration secrets
+appsettings.json
+appsettings.*.json
+
+# Generated backend files
+bin/
+obj/
+publish/
+.vs/
+.idea/
+
+# Original ZIP backup folders
+GameEngineAPI-main/
+Message-in-a-Bottle-main/

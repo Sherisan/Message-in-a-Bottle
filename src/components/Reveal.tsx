@@ -1,7 +1,7 @@
 import { extras, fx, lossArt, prizeArt as PRIZE_ART } from '../art'
 import { currencySymbol, money, times } from '../game/format'
 import { lossItem, prizeArt } from '../game/rules'
-import type { GameState } from '../game/store'
+import { store, type GameState } from '../game/store'
 
 const LOSS_LINES = {
   crab: 'Just a cheeky crab!',
@@ -14,7 +14,7 @@ export function Reveal({ s }: { s: GameState }) {
   const { result, picked, phase } = s
   if (!result || picked == null || !['opening', 'others', 'complete'].includes(phase)) return null
 
-  const prize = result.card.prize
+  const prize = store.effectivePrize
   const art = prizeArt(prize)
   const symbol = currencySymbol(s.info?.currency)
 
@@ -35,7 +35,7 @@ export function Reveal({ s }: { s: GameState }) {
         <img className="reveal-art" src={PRIZE_ART[art]} alt="" />
         <div className="reveal-text">
           <span className="reveal-mult">{times(prize)}</span>
-          <span className="reveal-amount">{money(result.win, symbol)}</span>
+          <span className="reveal-amount">{money(store.totalWin, symbol)}</span>
         </div>
       </div>
       {art !== 'plain' &&

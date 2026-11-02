@@ -17,11 +17,12 @@ function result(prize: number, stake = 2, balance = 100): PlayResult {
   }
 }
 
-function fakeApi(results: PlayResult[], balance = 100) {
+function fakeApi(results: PlayResult[], balance = 100, crabOutcome = { caught: false, bonusMultiplier: 1, bonusWin: 0, balance }) {
   return {
     info: vi.fn(async () => info),
     balance: vi.fn(async () => ({ balance, currency: 'ZAR' })),
     play: vi.fn(async () => results.shift()!),
+    catchCrab: vi.fn(async () => crabOutcome),
   }
 }
 
@@ -103,5 +104,25 @@ describe('GameStore', () => {
     await store.init()
     expect(store.get().phase).toBe('picking')
     expect(store.get().result?.card.prize).toBe(10)
+  })
+
+  it('adds the crab bonus to an already winning bottle when the crab stays caught', async () => {
+    const api = fakeApi([result(5, 2, 108)], 100, { caught: true, bonusMultiplier: 2, bonusWin: 10, balance: 118 })
+    const store = new GameStore(api)
+    store.setSpeed(0)
+    await store.init()
+
+    void store.send()
+    await settle(store, 'picking')
+    void store.pick(0)
+    await settle(store)
+    expect(store.get().crabStatus).toBe('active')
+
+    await store.catchCrab()
+    expect(api.catchCrab).toHaveBeenCalledWith(store.get().result?.roundId)
+    expect(store.get().crabStatus).toBe('caught')
+    expect(store.totalWin).toBe(20)
+    expect(store.effectivePrize).toBe(10)
+    expect(store.get().balance).toBe(118)
   })
 })

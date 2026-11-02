@@ -24,6 +24,13 @@ export interface PlayResult {
   card: BottlesCard
 }
 
+export interface CrabCatchResult {
+  caught: boolean
+  bonusMultiplier: number
+  bonusWin: number
+  balance: number | null
+}
+
 export interface GameInfo {
   gameId: string
   name: string
@@ -70,4 +77,7 @@ export const api = {
   balance: () => call<{ balance: number; currency: string }>('/api/wallet/balance'),
   /** Sends the tide: the server debits the stake, draws the prize, credits any win and returns the bottles. */
   play: (stake: number) => call<PlayResult>('/api/play', { method: 'POST', body: JSON.stringify({ stake }) }),
+  catchCrab: (roundId: string) => call<CrabCatchResult>('/api/play/crab/catch', {
+    method: 'POST', body: JSON.stringify({ roundId }),
+  }),
 }

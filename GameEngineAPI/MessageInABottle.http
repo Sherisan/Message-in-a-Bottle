@@ -1,0 +1,12 @@
+@baseUrl = http://localhost:5003
+@token = replace-with-player-session-token
+@roundId = replace-with-round-id
+
+### Attempt to catch the crab for a bottle round
+POST {{baseUrl}}/api/play/crab/catch
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "roundId": "{{roundId}}"
+}

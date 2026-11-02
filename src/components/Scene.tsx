@@ -3,7 +3,7 @@ import { scene } from '../art'
 /** The dusk beach behind everything: sky, sea, rolling waves, sand, and a few things living there. */
 export function Scene() {
   return (
-    <div className="scene" aria-hidden>
+    <div className="scene">
       <img className="sky" src={scene.bgSky} alt="" />
       <img className="sea" src={scene.bgSea} alt="" />
       <div className="waves waves-back" style={{ backgroundImage: `url("${scene.bgWaves}")` }} />
@@ -26,11 +26,6 @@ export function Scene() {
         </div>
       ))}
 
-      {/* A crab that scuttles along the sand now and then. */}
-      <div className="crab">
-        <img className="flap-a" src={scene.crab1} alt="" />
-        <img className="flap-b" src={scene.crab2} alt="" />
-      </div>
     </div>
   )
 }

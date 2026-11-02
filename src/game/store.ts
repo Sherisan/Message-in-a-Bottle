@@ -41,6 +41,11 @@ export interface GameState {
   autoRemaining: number
   history: HistoryItem[]
   soundOn: boolean
+  crabStatus: 'idle' | 'active' | 'caged' | 'caught' | 'escaped'
+  crabBusy: boolean
+  crabBonusMultiplier: number
+  crabBonusWin: number
+  crabMessage: string | null
   helpOpen: boolean
   historyOpen: boolean
   autoMenuOpen: boolean
@@ -70,7 +75,8 @@ export class GameStore {
       phase: 'loading', info: null, stakes: [], stake: settings.stake ?? 0, balance: null,
       result: null, picked: null, othersShown: 0, message: null, banner: null, autoRemaining: 0,
       history: readJson<HistoryItem[]>(sessionStorage, HISTORY_KEY) ?? [],
-      soundOn: sound.enabled, helpOpen: false, historyOpen: false, autoMenuOpen: false, fatal: null,
+      soundOn: sound.enabled, crabStatus: 'idle', crabBusy: false, crabBonusMultiplier: 1, crabBonusWin: 0,
+      crabMessage: null, helpOpen: false, historyOpen: false, autoMenuOpen: false, fatal: null,
     }
   }
 
@@ -91,14 +97,23 @@ export class GameStore {
   get shownBalance(): number | null {
     const { balance, result, phase } = this.state
     if (balance == null) return null
-    const pending = result && ['landing', 'picking', 'opening'].includes(phase) ? result.win : 0
+    const pending = result && ['landing', 'picking', 'opening'].includes(phase) ? this.totalWin : 0
     return round2(balance - pending)
   }
 
   /** The five bottle contents, once a bottle has been picked. */
   get values(): number[] | null {
     const { result, picked } = this.state
-    return result && picked != null ? bottleValues(result.card.prize, result.card.others, picked, BOTTLES) : null
+    return result && picked != null ? bottleValues(this.effectivePrize, result.card.others, picked, BOTTLES) : null
+  }
+
+  get effectivePrize() {
+    const { result, crabBonusMultiplier } = this.state
+    return result ? result.card.prize * crabBonusMultiplier : 0
+  }
+
+  get totalWin() {
+    return (this.state.result?.win ?? 0) + this.state.crabBonusWin
   }
 
   // ── setup ─────────────────────────────────────────────────────────────
@@ -116,19 +131,19 @@ export class GameStore {
 
   /** A play sent before a reload is already paid — bring its bottles back so the player can still open one. */
   private restore() {
-    const saved = readJson<{ result: PlayResult; picked: number | null }>(sessionStorage, SAVE_KEY)
+    const saved = readJson<{ result: PlayResult; picked: number | null; crabStatus?: GameState['crabStatus']; crabBonusMultiplier?: number; crabBonusWin?: number; crabMessage?: string | null }>(sessionStorage, SAVE_KEY)
     if (!saved?.result?.card) return
     if (saved.picked == null) {
-      this.set({ result: saved.result, picked: null, othersShown: 0, phase: 'picking' })
+      this.set({ result: saved.result, picked: null, othersShown: 0, phase: 'picking', crabStatus: saved.crabStatus ?? 'idle', crabBonusMultiplier: saved.crabBonusMultiplier ?? 1, crabBonusWin: saved.crabBonusWin ?? 0, crabMessage: saved.crabMessage ?? null })
     } else {
-      this.set({ result: saved.result, picked: saved.picked, othersShown: BOTTLES - 1 })
+      this.set({ result: saved.result, picked: saved.picked, othersShown: BOTTLES - 1, crabStatus: saved.crabStatus ?? 'idle', crabBonusMultiplier: saved.crabBonusMultiplier ?? 1, crabBonusWin: saved.crabBonusWin ?? 0 })
       this.finish()
     }
   }
 
   private save() {
-    const { result, picked } = this.state
-    if (result) sessionStorage.setItem(SAVE_KEY, JSON.stringify({ result, picked }))
+    const { result, picked, crabStatus, crabBonusMultiplier, crabBonusWin, crabMessage } = this.state
+    if (result) sessionStorage.setItem(SAVE_KEY, JSON.stringify({ result, picked, crabStatus, crabBonusMultiplier, crabBonusWin, crabMessage }))
   }
 
   // ── controls ──────────────────────────────────────────────────────────
@@ -168,6 +183,40 @@ export class GameStore {
 
   stopAuto = () => this.set({ autoRemaining: 0 })
 
+  endCrabPass() {
+    if (this.state.crabStatus !== 'active' || this.state.crabBusy) return
+    this.play('escape')
+    this.set({ crabStatus: 'escaped', crabMessage: 'Oh no! Mr Crab escaped!' })
+  }
+
+  async catchCrab() {
+    const { phase, result, crabStatus, crabBusy } = this.state
+    if (!['others', 'complete'].includes(phase) || !result || crabStatus !== 'active' || crabBusy) return
+    this.play('cage')
+    this.set({ crabBusy: true, crabStatus: 'caged', crabMessage: 'Mr Crab is caged!' })
+    try {
+      // Keep the cage visible long enough for the player to see the catch,
+      // even when the server responds immediately with an escape result.
+      await this.wait(1800)
+      const outcome = await this.api.catchCrab(result.roundId)
+      if (outcome.caught) this.play('win')
+      else this.play('escape')
+      this.set({
+        crabStatus: outcome.caught ? 'caught' : 'escaped',
+        crabBusy: false,
+        crabBonusMultiplier: outcome.bonusMultiplier,
+        crabBonusWin: outcome.bonusWin,
+        balance: outcome.balance ?? this.state.balance,
+        crabMessage: outcome.caught
+          ? outcome.bonusWin > 0 ? `Crab caged! ${outcome.bonusMultiplier}× bonus!` : 'Crab caged — but this bottle was empty.'
+          : 'Oh no! Mr Crab escaped!',
+      })
+      this.save()
+    } catch (e) {
+      this.set({ crabBusy: false, crabStatus: 'escaped', crabMessage: 'Oh no! Mr Crab escaped!' })
+    }
+  }
+
   /** Sends the tide: one server call that pays the stake and settles the round. */
   async send(): Promise<boolean> {
     if (!this.canSend()) return false
@@ -181,7 +230,7 @@ export class GameStore {
 
     this.busy = true
     this.play('tide')
-    this.set({ phase: 'sending', result: null, picked: null, othersShown: 0, banner: null, message: null })
+    this.set({ phase: 'sending', result: null, picked: null, othersShown: 0, banner: null, message: null, crabStatus: 'idle', crabBusy: false, crabBonusMultiplier: 1, crabBonusWin: 0, crabMessage: null })
     try {
       const result = await this.api.play(stake)
       this.set({ result, balance: result.balance ?? this.state.balance, phase: 'landing' })
@@ -195,7 +244,7 @@ export class GameStore {
     await this.wait(DELAYS.landing)
     this.play('splash')
     this.busy = false
-    this.set({ phase: 'picking' })
+    this.set({ phase: 'picking', crabStatus: 'idle', crabBusy: false, crabMessage: null })
     if (this.state.autoRemaining > 0) {
       await this.wait(DELAYS.autoPick)
       this.quickPick()
@@ -212,8 +261,11 @@ export class GameStore {
     const { phase, result } = this.state
     if (phase !== 'picking' || !result || bottle < 0 || bottle >= BOTTLES) return
     this.busy = true
-    this.play('pop')
-    this.set({ picked: bottle, phase: 'opening' })
+    const crabWasActive = this.state.crabStatus === 'active'
+    this.play('select')
+    this.play('open')
+    if (crabWasActive) this.play('escape')
+    this.set({ picked: bottle, phase: 'opening', crabStatus: crabWasActive ? 'escaped' : this.state.crabStatus, crabMessage: crabWasActive ? 'Oh no! Mr Crab escaped!' : this.state.crabMessage })
     this.save()
 
     await this.wait(DELAYS.open * 0.35)
@@ -222,7 +274,13 @@ export class GameStore {
     const { prize } = result.card
     this.play(prize <= 0 ? 'lose' : prize >= 500 ? 'jackpot' : prize >= 25 ? 'bigwin' : 'win')
 
-    this.set({ phase: 'others' })
+    const crabAppears = prize > 0
+    this.set({
+      phase: 'others',
+      crabStatus: crabAppears ? 'active' : 'idle',
+      crabBusy: false,
+      crabMessage: crabAppears ? 'Catch Mr Crab for a chance at a bonus!' : null,
+    })
     for (let i = 1; i < BOTTLES; i++) {
       await this.wait(DELAYS.otherStep)
       this.play('reveal')
@@ -235,15 +293,15 @@ export class GameStore {
   private async finish() {
     const { result } = this.state
     if (!result) return
-    const tier = winTier(result.card.prize)
-    const entry: HistoryItem = { roundId: result.roundId, stake: result.stake, multiplier: result.card.prize, win: result.win, at: Date.now() }
+    const tier = winTier(this.effectivePrize)
+    const entry: HistoryItem = { roundId: result.roundId, stake: result.stake, multiplier: this.effectivePrize, win: this.totalWin, at: Date.now() }
     const history = [entry, ...this.state.history.filter((h) => h.roundId !== result.roundId)].slice(0, 30)
     sessionStorage.setItem(HISTORY_KEY, JSON.stringify(history))
     sessionStorage.removeItem(SAVE_KEY)
     this.set({
       phase: 'complete',
       history,
-      banner: tier ? { tier, win: result.win, multiple: result.card.prize } : null,
+      banner: tier ? { tier, win: this.totalWin, multiple: this.effectivePrize } : null,
       message: result.winPending ? { kind: 'pending' } : this.state.message,
     })
 

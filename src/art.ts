@@ -14,6 +14,7 @@ import gullUp from './assets/art/ambient-seagull-up.svg'
 import gullDown from './assets/art/ambient-seagull-down.svg'
 import crab1 from './assets/art/ambient-crab-1.svg'
 import crab2 from './assets/art/ambient-crab-2.svg'
+import crabCage from './assets/art/Cage.png'
 
 import bottleGreen from './assets/art/bottle-green.svg'
 import bottleBlue from './assets/art/bottle-blue.svg'
@@ -64,7 +65,7 @@ import iconMenu from './assets/art/icon-menu.svg'
 import type { LossItem, PrizeArt } from './game/rules'
 import type { WinTier } from './game/rules'
 
-export const scene = { bgSky, bgSea, bgWaves, bgShoreline, bgSand, palm, shell1, shell2, shell3, starfish, rock, gullUp, gullDown, crab1, crab2 }
+export const scene = { bgSky, bgSea, bgWaves, bgShoreline, bgSand, palm, shell1, shell2, shell3, starfish, rock, gullUp, gullDown, crab1, crab2, crabCage }
 
 /** Bottle colours in screen order, left to right. */
 export const bottles = [

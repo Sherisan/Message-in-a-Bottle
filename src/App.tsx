@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { store, useGame, BOTTLES } from './game/store'
 import { Scene } from './components/Scene'
+import { Crab } from './components/Crab'
 import { Header } from './components/Header'
 import { Bottles } from './components/Bottles'
 import { Reveal } from './components/Reveal'
@@ -50,6 +51,7 @@ export function App() {
   return (
     <div className={`app phase-${s.phase}`}>
       <Scene />
+      <Crab s={s} />
       <Header s={s} />
       <main className="stage">
         {s.phase === 'loading' && <div className="loading">Loading…</div>}
