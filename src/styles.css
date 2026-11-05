@@ -337,3 +337,17 @@ img { user-select: none; -webkit-user-drag: none; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
 }
+
+/* ── Promotions: the ocean palette for the shared promo UI (src/promo). html:root outranks promo.css defaults ── */
+html:root {
+  --promo-bg: rgba(11, 26, 46, 0.95);
+  --promo-card: rgba(14, 74, 92, 0.35);
+  --promo-line: rgba(255, 213, 79, 0.3);
+  --promo-text: #f5e6c4;
+  --promo-soft: #b9d3d8;
+  --promo-gold: #ffd54f;
+  --promo-gold-deep: #ff8a65;
+  --promo-ink: #4a2f17;
+}
+.stage .promo-strip { position: absolute; top: 8px; left: 50%; transform: translateX(-50%); z-index: 5; width: max-content; max-width: 96vw; }
+.controls .free-card-btn { align-self: center; }

@@ -2,6 +2,7 @@ import { ui } from '../art'
 import { currencySymbol, money, shortMoney } from '../game/format'
 import { AUTO_COUNTS, store, type GameState } from '../game/store'
 import { IconButton } from './Header'
+import { FreeCardButton } from '../promo/PromoUI'
 
 /** Bottom panel: stake chips, the main button, Quick Pick and Auto. */
 export function Controls({ s }: { s: GameState }) {
@@ -52,6 +53,10 @@ export function Controls({ s }: { s: GameState }) {
         <span className="main-label">{main.label}</span>
         {main.sub && <span className="main-sub">{main.sub}</span>}
       </button>
+
+      {!auto && (s.phase === 'ready' || s.phase === 'complete') && (
+        <FreeCardButton label="Free bottle" money={(n) => money(n, symbol)} disabled={!canSend} onPlay={() => void store.send(true)} />
+      )}
 
       <div className="side-btns">
         <IconButton

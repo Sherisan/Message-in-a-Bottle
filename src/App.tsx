@@ -7,6 +7,8 @@ import { Reveal } from './components/Reveal'
 import { Controls } from './components/Controls'
 import { WinBanner } from './components/WinBanner'
 import { HelpModal, HistoryModal, MessageToast } from './components/Modals'
+import { PromoNotices, PromoPanel, PromoStrip } from './promo/PromoUI'
+import { currencySymbol, money } from './game/format'
 
 let started = false
 
@@ -52,6 +54,7 @@ export function App() {
       <Scene />
       <Header s={s} />
       <main className="stage">
+        <PromoStrip money={(n) => money(n, currencySymbol(s.info?.currency))} />
         {s.phase === 'loading' && <div className="loading">Loading…</div>}
         {s.phase === 'ready' && !s.result && <div className="prompt">Send the tide to wash five bottles ashore</div>}
         <Reveal s={s} />
@@ -62,6 +65,8 @@ export function App() {
       <HelpModal s={s} />
       <HistoryModal s={s} />
       <MessageToast s={s} />
+      <PromoPanel money={(n) => money(n, currencySymbol(s.info?.currency))} />
+      <PromoNotices />
     </div>
   )
 }

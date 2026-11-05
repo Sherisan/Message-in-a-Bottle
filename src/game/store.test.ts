@@ -65,7 +65,7 @@ describe('GameStore', () => {
 
     void store.send()
     await settle(store, 'picking')
-    expect(api.play).toHaveBeenCalledWith(2)
+    expect(api.play).toHaveBeenCalledWith(2, false)
     expect(store.shownBalance).toBe(98) // 108 includes the R10 win, not shown yet
 
     void store.pick(3)

@@ -2,6 +2,8 @@ import { useSyncExternalStore } from 'react'
 import { api as defaultApi, ConnectionError, GameError, type GameInfo, type PlayResult } from '../api/client'
 import { bottleValues, winTier, type WinTier } from './rules'
 import { sound, type SoundName } from './sound'
+import { currencySymbol, money } from './format'
+import { promoCash, promos } from '../promo/promoStore'
 
 /**
  * Game flow:  ready → sending → landing → picking → opening → others → complete → (send again)
@@ -91,7 +93,8 @@ export class GameStore {
   get shownBalance(): number | null {
     const { balance, result, phase } = this.state
     if (balance == null) return null
-    const pending = result && ['landing', 'picking', 'opening'].includes(phase) ? result.win : 0
+    // Promo cash the play earned (mystery prize, …) lands with the bottle too.
+    const pending = result && ['landing', 'picking', 'opening'].includes(phase) ? result.win + promoCash(result.promos) : 0
     return round2(balance - pending)
   }
 
@@ -109,6 +112,7 @@ export class GameStore {
       const stake = stakes.includes(this.state.stake) ? this.state.stake : stakes[0]
       this.set({ info, stakes, stake, balance: wallet.balance, phase: 'ready' })
       this.restore()
+      promos.start()
     } catch (e) {
       this.set({ phase: 'fatal', fatal: e instanceof Error ? e.message : String(e) })
     }
@@ -169,11 +173,11 @@ export class GameStore {
   stopAuto = () => this.set({ autoRemaining: 0 })
 
   /** Sends the tide: one server call that pays the stake and settles the round. */
-  async send(): Promise<boolean> {
+  async send(freeCard = false): Promise<boolean> {
     if (!this.canSend()) return false
     const { stake } = this.state
     const shown = this.shownBalance
-    if (shown != null && shown < stake) {
+    if (!freeCard && shown != null && shown < stake) {
       this.play('alert')
       this.set({ message: { kind: 'insufficient' }, autoRemaining: 0 })
       return false
@@ -183,7 +187,7 @@ export class GameStore {
     this.play('tide')
     this.set({ phase: 'sending', result: null, picked: null, othersShown: 0, banner: null, message: null })
     try {
-      const result = await this.api.play(stake)
+      const result = await this.api.play(stake, freeCard)
       this.set({ result, balance: result.balance ?? this.state.balance, phase: 'landing' })
       this.save()
     } catch (e) {
@@ -235,6 +239,9 @@ export class GameStore {
   private async finish() {
     const { result } = this.state
     if (!result) return
+    // Promotions: shown once the bottle is open (free card used, mystery prizes, progress) — and refreshed.
+    const symbol = currencySymbol(this.state.info?.currency)
+    promos.showOutcomes(result.promos, (n) => money(n, symbol))
     const tier = winTier(result.card.prize)
     const entry: HistoryItem = { roundId: result.roundId, stake: result.stake, multiplier: result.card.prize, win: result.win, at: Date.now() }
     const history = [entry, ...this.state.history.filter((h) => h.roundId !== result.roundId)].slice(0, 30)

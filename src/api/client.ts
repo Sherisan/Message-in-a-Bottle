@@ -1,5 +1,6 @@
 import { API_BASE } from './base'
 import { getToken } from './auth'
+import type { PromoOutcome } from '../promo/promoApi'
 
 // ── Wire types (camelCase JSON from the game API's PlayController) ─────────
 
@@ -22,6 +23,10 @@ export interface PlayResult {
   /** The win is settled but the wallet credit hasn't confirmed yet — it will be retried server-side. */
   winPending: boolean
   card: BottlesCard
+  /** Played with a promo free card: win is what the promotion paid. */
+  freeBet?: boolean
+  /** What this play earned from promotions (mystery prize, buy-X progress, collection symbols, …). */
+  promos?: PromoOutcome[]
 }
 
 export interface GameInfo {
@@ -69,5 +74,5 @@ export const api = {
   info: () => call<GameInfo>('/api/play/info'),
   balance: () => call<{ balance: number; currency: string }>('/api/wallet/balance'),
   /** Sends the tide: the server debits the stake, draws the prize, credits any win and returns the bottles. */
-  play: (stake: number) => call<PlayResult>('/api/play', { method: 'POST', body: JSON.stringify({ stake }) }),
+  play: (stake: number, freeBet = false) => call<PlayResult>('/api/play', { method: 'POST', body: JSON.stringify({ stake, freeBet }) }),
 }

@@ -1,6 +1,7 @@
 import { ui } from '../art'
 import { currencySymbol, money } from '../game/format'
 import { store, type GameState } from '../game/store'
+import { PromoButton } from '../promo/PromoUI'
 
 export function Header({ s }: { s: GameState }) {
   const balance = store.shownBalance
@@ -17,6 +18,7 @@ export function Header({ s }: { s: GameState }) {
       </div>
 
       <nav className="header-icons">
+        <PromoButton />
         <IconButton src={ui.iconHistory} label="History" onClick={() => store.openHistory(true)} />
         <IconButton src={ui.iconInfo} label="How to play" onClick={() => store.openHelp(true)} />
         <IconButton src={s.soundOn ? ui.iconSoundOn : ui.iconSoundOff} label={s.soundOn ? 'Sound off' : 'Sound on'} onClick={() => store.toggleSound()} />
