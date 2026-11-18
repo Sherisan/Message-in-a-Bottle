@@ -4,7 +4,7 @@ import { bottleValues, prizeArt, winTier } from './rules'
 import { GameStore } from './store'
 
 const info: GameInfo = {
-  gameId: 'message-in-a-bottle', name: 'Message in a Bottle', minBet: 2, maxBet: 20, maxWin: 10000, rtp: 0.95,
+  gameId: 'message-in-a-bottle', name: 'Message in a Bottle', minBet: 2, maxBet: 20, maxWin: 10000, rtp: 0.96,
   currency: 'ZAR', stakes: [2, 5, 10, 20], prizeTable: [{ multiplier: 5, chance: 0.024 }],
   fairness: { currentServerSeedHash: 'abc', previousServerSeed: null },
 }
