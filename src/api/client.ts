@@ -1,5 +1,6 @@
 import { API_BASE } from './base'
 import { getToken } from './auth'
+import { connectionLost, isOnline, isUnreachableStatus, startConnectionGuard } from '../net/connectionGuard'
 import type { PromoOutcome } from '../promo/promoApi'
 
 // ── Wire types (camelCase JSON from the game API's PlayController) ─────────
@@ -52,7 +53,15 @@ export class GameError extends Error {
 /** The request never got an answer — the outcome of a play is unknown until the balance is re-read. */
 export class ConnectionError extends Error {}
 
+// Connection-loss safety (net/connectionGuard): started by the first call; its start-up recovery has the server settle
+// anything a dropped connection left open before the game loads.
+let guard: Promise<unknown> | null = null
+
 async function call<T>(path: string, init?: RequestInit): Promise<T> {
+  guard ??= startConnectionGuard({ apiBase: API_BASE, getToken, heartbeat: true })
+  await guard
+  // Nothing is sent (or bought) while the "Connecting to server…" panel is up.
+  if (!isOnline()) throw new ConnectionError('Connecting to server…')
   const token = await getToken()
   let res: Response
   try {
@@ -61,6 +70,11 @@ async function call<T>(path: string, init?: RequestInit): Promise<T> {
       headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json', ...init?.headers },
     })
   } catch {
+    connectionLost()
+    throw new ConnectionError('Connection lost.')
+  }
+  if (isUnreachableStatus(res.status)) {
+    connectionLost()
     throw new ConnectionError('Connection lost.')
   }
   if (res.status === 429) throw new GameError('Too many requests — slow down a little.', 'RATE_LIMITED', 429)

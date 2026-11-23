@@ -1,4 +1,5 @@
 import { useSyncExternalStore } from 'react'
+import { onRecovered } from '../net/connectionGuard'
 import { api as defaultApi, ConnectionError, GameError, type GameInfo, type PlayResult } from '../api/client'
 import { bottleValues, winTier, type WinTier } from './rules'
 import { sound, type SoundName } from './sound'
@@ -106,6 +107,11 @@ export class GameStore {
 
   // ── setup ─────────────────────────────────────────────────────────────
   async init() {
+    // Connection-loss safety: after a reconnect, re-read what the server settled while the panel was up.
+    onRecovered(async () => {
+      // The server settled any play made before the drop; the balance shows it.
+      try { this.set({ balance: (await this.api.balance()).balance }) } catch { /* stays as last known */ }
+    })
     try {
       const [info, wallet] = await Promise.all([this.api.info(), this.api.balance()])
       const stakes = info.stakes?.length ? info.stakes : [info.minBet]
